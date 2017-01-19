@@ -1,0 +1,134 @@
+* .NET Core and Nancy example code
+
+  This is a short writeup of what it took for me to get a basic
+  working "hello world" application working with .NET and Nancy on my
+  Mac.
+
+  This is based on Scott Hanselman's blog post "[[http://www.hanselman.com/blog/ExploringAMinimalWebAPIWithNETCoreAndNancyFX.aspx][Exploring a minimal
+  WebAPI with .NET Core and NancyFX]]", with the modifications that I
+  needed to get it working for myself.
+
+* Step 1: Install .NET Core
+
+  First step is to [[https://www.microsoft.com/net/core][install .NET core]], this is pretty easy to do, just
+  follow the instructions. You'll know that the install worked if you
+  can type this in your terminal and see a result:
+
+  #+BEGIN_SRC sh
+  dotnet --version
+  #+END_SRC
+
+* Step 2: Create the files needed for the example
+
+  To get the example working, you'll need to create four files:
+
+  1. project.json
+  2. Startup.cs
+  3. Main.cs
+  4. HomeModule.cs
+
+  See below for what each file should contain.
+
+** project.json
+   #+BEGIN_SRC javascript :tangle project.json
+     {
+       "version": "1.0.0-*",
+       "buildOptions": {
+         "debugType": "portable",
+         "emitEntryPoint": true
+       },
+       "dependencies": {
+         "Microsoft.NETCore.App": {
+           "version": "1.1.0",
+           "type": "platform"
+         },
+         "Microsoft.AspNetCore.Server.Kestrel": "1.1.0",
+         "Microsoft.AspNetCore.Owin": "1.1.0",
+         "Nancy": "2.0.0-barneyrubble"
+       },
+       "commands": {
+         "web": "Microsoft.AspNet.Server.Kestrel"
+       },
+       "frameworks": {
+         "netcoreapp1.0": {}
+       }
+     }
+   #+END_SRC
+
+   /Note:/ I had to change the version numbers from "1.0.0" to "1.1.0"
+   to get things to work.
+** Startup.cs
+   #+BEGIN_SRC java :tangle Startup.cs
+     using Microsoft.AspNetCore.Builder;
+     using Nancy.Owin;
+
+     namespace NancyApplication
+     {
+        public class Startup
+         {
+             public void Configure(IApplicationBuilder app)
+             {
+                 app.UseOwin(x => x.UseNancy());
+             }
+        }
+     }
+   #+END_SRC
+** Main.cs
+   #+BEGIN_SRC java :tangle Main.cs
+     using System.IO;
+     using Microsoft.AspNetCore.Builder;
+     using Microsoft.AspNetCore.Hosting;
+
+     namespace NancyApplication
+     {
+         public class Program
+         {
+             public static void Main(string[] args)
+             {
+                 var host = new WebHostBuilder()
+                     .UseContentRoot(Directory.GetCurrentDirectory())
+                     .UseKestrel()
+                     .UseStartup<Startup>()
+                     .Build();
+
+                 host.Run();
+             }
+         }
+     }
+   #+END_SRC
+** HomeModule.cs
+   #+BEGIN_SRC java :tangle HomeModule.cs
+     using Nancy;
+     namespace NancyApplication
+     {
+         public class HomeModule : NancyModule
+         {
+             public HomeModule()
+             {
+                 Get("/", args => "Hello World. This is pretty cool!");
+                 Get("/test/{name}", args => new Person() { Name = args.name });
+             }
+         }
+
+         public class Person
+         {
+             public string Name { get; set; }
+         }
+     }
+   #+END_SRC
+
+* Step 3: Run the example
+  Once you have created the four files needed for this sample, run the
+  following command to "restore" the .NET dependencies listed in
+  =project.json=:
+
+  #+BEGIN_SRC sh
+  dotnet restore
+  #+END_SRC
+
+  Once that is complete, start up the example Nancy web server with
+  this command:
+
+  #+BEGIN_SRC
+  dotnet run
+  #+END_SRC
